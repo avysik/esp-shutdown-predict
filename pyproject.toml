@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ufpy-esp-synth"
+version = "0.1.0"
+description = "Production-grade deterministic synthetic ESP time-series generator based on ufpy (no randomness, no noise)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "ufpy-esp-synth contributors"}]
+dependencies = [
+  "pandas>=2.1",
+  "pyarrow>=14.0",
+  "pydantic>=2.0",
+  "typer>=0.12",
+  "tqdm>=4.66",
+  "ufpy>=0.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+]
+
+[project.scripts]
+ufpy-esp-synth = "ufpy_esp_synth.cli.main:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["ufpy_esp_synth*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
