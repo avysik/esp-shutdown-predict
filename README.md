@@ -24,7 +24,7 @@ python -m pip install -e ./ufpy
 ### 2) Install this utility
 
 ```bash
-git clone <YOUR_REPO_WITH_THIS_PROJECT>
+git clone esp-shutdown-predict
 python -m pip install -e
 ```
 
