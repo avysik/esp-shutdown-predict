@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any
 
 import pandas as pd
+from tqdm import tqdm
 
 from ufpy_esp_synth.adapters.ufpy_adapter import build_pump, build_pvt, build_system, load_repository
 from ufpy_esp_synth.config.models import AppConfig, ScenarioName
@@ -67,14 +68,13 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
 
     repo = load_repository(cfg.esp_db_path)
 
+    # Build a temporary object only to read pump DB bounds for deterministic q profile.
     if cfg.scenario == ScenarioName.ESP_SYSTEM:
-        sys = build_system(repo, cfg.pump, cfg.motor)  # type: ignore[arg-type]
-        pump = sys.pump
+        pump_for_bounds = build_system(repo, cfg.pump, cfg.motor).pump  # type: ignore[arg-type]
     else:
-        pump = build_pump(repo, cfg.pump)
-        sys = None  # type: ignore[assignment]
+        pump_for_bounds = build_pump(repo, cfg.pump)
 
-    q_min, q_max = _pump_q_range_from_db(pump)
+    q_min, q_max = _pump_q_range_from_db(pump_for_bounds)
     q_series = make_q_profile(
         n_points=cfg.time_axis.n_points,
         q_min=q_min,
@@ -86,8 +86,18 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
     cols = columns_for(cfg.scenario)
     data: dict[str, list[Any]] = {c: [] for c in cols}
 
-    for i, ts in enumerate(idx):
+    for i, ts in enumerate(tqdm(idx, desc=f"run {run_id}", leave=False)):
         q_liq = float(q_series[i])
+
+        # IMPORTANT:
+        # Rebuild ufpy objects on every timestamp to avoid hidden state carry-over
+        # between time points.
+        if cfg.scenario == ScenarioName.ESP_SYSTEM:
+            sys = build_system(repo, cfg.pump, cfg.motor)  # type: ignore[arg-type]
+            pump = sys.pump
+        else:
+            pump = build_pump(repo, cfg.pump)
+            sys = None  # type: ignore[assignment]
 
         pvt = build_pvt(cfg.pvt, q_liq_sm3day=q_liq)
         # Compute intake PVT state (used by pump.calc_ESP internally; also recorded as honest intermediate outputs)
@@ -137,7 +147,12 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
 
         elif cfg.scenario == ScenarioName.PUMP_DP:
             pump.fluid = pvt
-            pump.calc_ESP(cfg.hydraulic.p_int_atma, cfg.hydraulic.t_int_C, t_dis_C=-1.0, calc_from_dis=False)
+            pump.calc_ESP(
+                cfg.hydraulic.p_int_atma,
+                cfg.hydraulic.t_int_C,
+                t_dis_C=-1.0,
+                calc_from_dis=False,
+            )
 
             row = {
                 **common,
@@ -151,12 +166,14 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
 
         elif cfg.scenario == ScenarioName.ESP_SYSTEM:
             assert sys is not None
+            assert cfg.motor is not None
+
             sys.fluid = pvt
             sys.calc_esp_system(
                 cfg.hydraulic.p_int_atma,
                 cfg.hydraulic.t_int_C,
                 t_dis_C=-1.0,
-                u_surf_v=cfg.motor.u_surf_v,  # type: ignore[union-attr]
+                u_surf_v=cfg.motor.u_surf_v,
                 f_surf_hz=float(pump.freq_hz),
                 calc_along_flow=True,
             )
@@ -175,14 +192,14 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
                 "power_fluid_w": float(sys.pump.power_fluid_W),
                 "power_esp_w": float(sys.pump.power_ESP_W),
                 "system_eff_d": float(sys.eff_d),
-                "u_surf_v": float(cfg.motor.u_surf_v),  # type: ignore[union-attr]
-                "motor_u_nom_lin_v": float(cfg.motor.u_nom_lin_v),  # type: ignore[union-attr]
-                "motor_p_nom_kw": float(cfg.motor.p_nom_kw),  # type: ignore[union-attr]
-                "motor_f_nom_hz": float(cfg.motor.f_nom_hz),  # type: ignore[union-attr]
-                "motor_eff_nom_fr": float(cfg.motor.eff_nom_fr),  # type: ignore[union-attr]
-                "motor_cosphi_nom_fr": float(cfg.motor.cosphi_nom_fr),  # type: ignore[union-attr]
-                "motor_slip_nom_fr": float(cfg.motor.slip_nom_fr),  # type: ignore[union-attr]
-                "motor_id": int(cfg.motor.motor_id),  # type: ignore[union-attr]
+                "u_surf_v": float(cfg.motor.u_surf_v),
+                "motor_u_nom_lin_v": float(cfg.motor.u_nom_lin_v),
+                "motor_p_nom_kw": float(cfg.motor.p_nom_kw),
+                "motor_f_nom_hz": float(cfg.motor.f_nom_hz),
+                "motor_eff_nom_fr": float(cfg.motor.eff_nom_fr),
+                "motor_cosphi_nom_fr": float(cfg.motor.cosphi_nom_fr),
+                "motor_slip_nom_fr": float(cfg.motor.slip_nom_fr),
+                "motor_id": int(cfg.motor.motor_id),
                 "motor_u_lin_v": float(md.u_lin_v),
                 "motor_i_lin_a": float(md.i_lin_a),
                 "motor_cosphi": float(md.cosphi),
