@@ -3,3 +3,9 @@ __pycache__
 data
 *.parquet
 .venv
+.idea
+.pytest_cache
+.pytest-tmp
+*pytest*
+out_*/
+pytest-cache-files-*

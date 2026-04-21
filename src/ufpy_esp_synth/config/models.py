@@ -206,3 +206,4 @@ class AppConfig(BaseModel):
             esp_db_path=kwargs.get("esp_db_path"),
             motor=motor,
         )
+    
