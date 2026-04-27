@@ -16,6 +16,7 @@ dependencies = [
   "pydantic>=2.0",
   "typer>=0.12",
   "tqdm>=4.66",
+  "matplotlib>=3.8",
   "ufpy>=0.1.0",
 ]
 
@@ -27,6 +28,7 @@ dev = [
 
 [project.scripts]
 ufpy-esp-synth = "ufpy_esp_synth.cli.main:app"
+ufpy-esp-plot-windows = "ufpy_esp_synth.plot_windows:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

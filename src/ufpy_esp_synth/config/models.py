@@ -11,6 +11,7 @@ class ScenarioName(str, Enum):
     PUMP_ONLY = "pump-only"
     PUMP_DP = "pump-dp"
     ESP_SYSTEM = "esp-system"
+    WELL_ESP_SYSTEM = "well-esp-system"
 
     @staticmethod
     def normalize(value: str) -> "ScenarioName":
@@ -24,6 +25,10 @@ class ScenarioName(str, Enum):
             "esp-system": "esp-system",
             "electric-chain": "esp-system",
             "system": "esp-system",
+            "well-esp-system": "well-esp-system",
+            "well-system": "well-esp-system",
+            "well": "well-esp-system",
+            "nodal": "well-esp-system",
         }
         if v in aliases:
             v = aliases[v]
@@ -44,6 +49,29 @@ class PumpConfig(BaseModel):
 class HydraulicConfig(BaseModel):
     p_int_atma: float = Field(..., gt=0)
     t_int_C: float = Field(...)
+
+
+class InflowConfig(BaseModel):
+    p_res_atma: float = Field(..., gt=0)
+    q_test_sm3day: float = Field(..., ge=0)
+    p_test_atma: float = Field(..., ge=0)
+
+
+class WellConfig(BaseModel):
+    p_wh_atma: float = Field(..., ge=0)
+    p_cas_atma: float = Field(10.0, ge=0)
+    t_wf_C: float = Field(...)
+    t_surface_C: float = Field(...)
+    h_perf_m: float = Field(..., gt=0)
+    h_esp_m: float = Field(..., gt=0)
+    d_tub_mm: float = Field(..., gt=0)
+    d_cas_mm: float = Field(..., gt=0)
+
+    @model_validator(mode="after")
+    def _validate_depths(self) -> "WellConfig":
+        if self.h_perf_m < self.h_esp_m:
+            raise ValueError("h_perf_m must be greater than or equal to h_esp_m.")
+        return self
 
 
 class PVTConfig(BaseModel):
@@ -103,11 +131,6 @@ class TimeAxisConfig(BaseModel):
     time_step: str = Field(..., min_length=1)
     n_points: int = Field(..., ge=1)
 
-
-class TimeAxisConfig(BaseModel):
-    time_step: str
-    n_points: int
-
     @field_validator("time_step")
     @classmethod
     def normalize_freq(cls, v: str) -> str:
@@ -123,7 +146,7 @@ class GenerationConfig(BaseModel):
 class AppConfig(BaseModel):
     scenario: ScenarioName
     pump: PumpConfig
-    hydraulic: HydraulicConfig
+    hydraulic: Optional[HydraulicConfig]
     pvt: PVTConfig
     time_axis: TimeAxisConfig
     generation: GenerationConfig
@@ -131,14 +154,35 @@ class AppConfig(BaseModel):
     # optional
     esp_db_path: Optional[Path] = None
     motor: Optional[MotorConfig] = None
+    control_plan_path: Optional[Path] = None
+    inflow: Optional[InflowConfig] = None
+    well: Optional[WellConfig] = None
 
     @model_validator(mode="after")
     def _validate_scenario_requirements(self) -> "AppConfig":
-        if self.scenario == ScenarioName.ESP_SYSTEM and self.motor is None:
-            raise ValueError("motor config is required for esp-system scenario.")
-        if self.scenario != ScenarioName.ESP_SYSTEM and self.motor is not None:
-            # Keep strict: do not accept unused inputs (honesty / no extra fields)
-            raise ValueError("motor config must not be provided for non esp-system scenarios.")
+        if self.scenario == ScenarioName.ESP_SYSTEM:
+            if self.motor is None:
+                raise ValueError("motor config is required for esp-system scenario.")
+            if self.hydraulic is None:
+                raise ValueError("hydraulic config is required for esp-system scenario.")
+            if self.inflow is not None or self.well is not None:
+                raise ValueError("inflow and well config must not be provided for esp-system scenario.")
+        elif self.scenario == ScenarioName.WELL_ESP_SYSTEM:
+            if self.motor is None:
+                raise ValueError("motor config is required for well-esp-system scenario.")
+            if self.inflow is None:
+                raise ValueError("inflow config is required for well-esp-system scenario.")
+            if self.well is None:
+                raise ValueError("well config is required for well-esp-system scenario.")
+            if self.hydraulic is not None:
+                raise ValueError("hydraulic config must not be provided for well-esp-system scenario.")
+        else:
+            if self.motor is not None:
+                raise ValueError("motor config must not be provided for non-system scenarios.")
+            if self.hydraulic is None:
+                raise ValueError("hydraulic config is required for pump-only and pump-dp scenarios.")
+            if self.inflow is not None or self.well is not None:
+                raise ValueError("inflow and well config must not be provided for pump-only and pump-dp scenarios.")
         return self
 
     @classmethod
@@ -153,10 +197,12 @@ class AppConfig(BaseModel):
             freq_hz=kwargs.get("pump_freq_hz"),
         )
 
-        hydraulic = HydraulicConfig(
-            p_int_atma=kwargs["p_int_atma"],
-            t_int_C=kwargs["t_int_C"],
-        )
+        hydraulic = None
+        if kwargs.get("p_int_atma") is not None and kwargs.get("t_int_C") is not None:
+            hydraulic = HydraulicConfig(
+                p_int_atma=kwargs["p_int_atma"],
+                t_int_C=kwargs["t_int_C"],
+            )
 
         pvt = PVTConfig(
             gamma_g=kwargs["gamma_g"],
@@ -184,7 +230,7 @@ class AppConfig(BaseModel):
         )
 
         motor = None
-        if scenario == ScenarioName.ESP_SYSTEM:
+        if scenario in (ScenarioName.ESP_SYSTEM, ScenarioName.WELL_ESP_SYSTEM):
             motor = MotorConfig(
                 u_surf_v=kwargs["u_surf_v"],
                 u_nom_lin_v=kwargs["motor_u_nom_lin_v"],
@@ -196,6 +242,27 @@ class AppConfig(BaseModel):
                 motor_id=kwargs["motor_id"],
             )
 
+        inflow = None
+        if scenario == ScenarioName.WELL_ESP_SYSTEM:
+            inflow = InflowConfig(
+                p_res_atma=kwargs["p_res_atma"],
+                q_test_sm3day=kwargs["q_test_sm3day"],
+                p_test_atma=kwargs["p_test_atma"],
+            )
+
+        well = None
+        if scenario == ScenarioName.WELL_ESP_SYSTEM:
+            well = WellConfig(
+                p_wh_atma=kwargs["p_wh_atma"],
+                p_cas_atma=kwargs.get("p_cas_atma", 10.0),
+                t_wf_C=kwargs["t_wf_C"],
+                t_surface_C=kwargs["t_surface_C"],
+                h_perf_m=kwargs["h_perf_m"],
+                h_esp_m=kwargs["h_esp_m"],
+                d_tub_mm=kwargs["d_tub_mm"],
+                d_cas_mm=kwargs["d_cas_mm"],
+            )
+
         return cls(
             scenario=scenario,
             pump=pump,
@@ -205,5 +272,8 @@ class AppConfig(BaseModel):
             generation=generation,
             esp_db_path=kwargs.get("esp_db_path"),
             motor=motor,
+            control_plan_path=kwargs.get("control_plan_path"),
+            inflow=inflow,
+            well=well,
         )
     

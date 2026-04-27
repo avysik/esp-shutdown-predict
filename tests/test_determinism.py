@@ -6,16 +6,17 @@ import pandas as pd
 
 from ufpy_esp_synth.config.models import AppConfig
 from ufpy_esp_synth.services.generation import generate_dataframe
+from tests.helpers import artifact_dir
 
 
-def _base_cfg(tmp_path: Path) -> AppConfig:
+def _base_cfg(output_dir: Path) -> AppConfig:
     # Minimal small config for fast tests (small stage_num).
     return AppConfig.from_cli(
         scenario="pump-dp",
         esp_id="1006",
         n_files=1,
         workers=1,
-        output_dir=tmp_path,
+        output_dir=output_dir,
         time_step="1H",
         n_points=6,
         esp_db_path=None,
@@ -46,8 +47,8 @@ def _base_cfg(tmp_path: Path) -> AppConfig:
     )
 
 
-def test_determinism_same_config_same_output(tmp_path: Path) -> None:
-    cfg = _base_cfg(tmp_path)
+def test_determinism_same_config_same_output() -> None:
+    cfg = _base_cfg(artifact_dir("determinism"))
     df1 = generate_dataframe(cfg, run_id=0, total_runs=1)
     df2 = generate_dataframe(cfg, run_id=0, total_runs=1)
 

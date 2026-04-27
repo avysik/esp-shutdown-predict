@@ -5,15 +5,16 @@ from pathlib import Path
 from ufpy_esp_synth.config.models import AppConfig, ScenarioName
 from ufpy_esp_synth.domain.schema import columns_for
 from ufpy_esp_synth.services.generation import generate_dataframe
+from tests.helpers import artifact_dir
 
 
-def test_schema_columns_match_domain_schema(tmp_path: Path) -> None:
+def test_schema_columns_match_domain_schema() -> None:
     cfg = AppConfig.from_cli(
         scenario="esp-system",
         esp_id="1006",
         n_files=1,
         workers=1,
-        output_dir=tmp_path,
+        output_dir=artifact_dir("schema"),
         time_step="30min",
         n_points=4,
         esp_db_path=None,
