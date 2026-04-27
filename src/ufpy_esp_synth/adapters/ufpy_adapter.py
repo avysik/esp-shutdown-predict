@@ -8,9 +8,11 @@ from ufpy.esp.motor import ESPMotor
 from ufpy.esp.pump import ESPPump
 from ufpy.esp.system import ESPSystem
 from ufpy.pvt.pvt import PVT
+from ufpy.reservoir.ipr import IPRVogel
 from ufpy.well.well_esp import WellESP
 
-from ufpy_esp_synth.config.models import InflowConfig, MotorConfig, PumpConfig, PVTConfig, WellConfig
+from ufpy_esp_synth.config.models import IPRMode, InflowConfig, MotorConfig, PumpConfig, PVTConfig, WellConfig
+from ufpy_esp_synth.domain.ipr_models import LinearProductivityIPR
 
 
 def resolve_default_esp_db_path() -> Path:
@@ -130,13 +132,24 @@ def build_well_esp(
     well_cfg: WellConfig,
 ) -> WellESP:
     well = WellESP()
-    well.fluid = build_pvt(pvt_cfg, q_liq_sm3day=max(inflow_cfg.q_test_sm3day, 0.0))
+    well.fluid = build_pvt(pvt_cfg, q_liq_sm3day=max(inflow_cfg.effective_q_test_sm3day, 0.0))
 
-    well.ipr.p_res_atma = inflow_cfg.p_res_atma
-    well.ipr.q_test_sm3day = inflow_cfg.q_test_sm3day
-    well.ipr.p_test_atma = inflow_cfg.p_test_atma
-    well.ipr.fw_perc = pvt_cfg.fw_fr * 100.0
-    well.ipr.pb_atma = pvt_cfg.pb_atma
+    if inflow_cfg.ipr_mode == IPRMode.LINEAR_PI:
+        well.ipr = LinearProductivityIPR(
+            p_res_atma=inflow_cfg.p_res_atma,
+            productivity_index=inflow_cfg.effective_productivity_index,
+            p_test_atma=inflow_cfg.p_test_atma,
+            fw_perc=pvt_cfg.fw_fr * 100.0,
+            pb_atma=pvt_cfg.pb_atma,
+        )
+    else:
+        ipr = IPRVogel()
+        ipr.p_res_atma = inflow_cfg.p_res_atma
+        ipr.q_test_sm3day = inflow_cfg.effective_q_test_sm3day
+        ipr.p_test_atma = inflow_cfg.p_test_atma
+        ipr.fw_perc = pvt_cfg.fw_fr * 100.0
+        ipr.pb_atma = pvt_cfg.pb_atma
+        well.ipr = ipr
 
     well.esp.load_from_repository(repo, pump_cfg.esp_id)
     if pump_cfg.stage_num is not None:

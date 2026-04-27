@@ -99,7 +99,7 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
         run_id=run_id,
         total_runs=total_runs,
     )
-    q_base_value = cfg.inflow.q_test_sm3day if cfg.scenario == ScenarioName.WELL_ESP_SYSTEM else (q_min + q_max) / 2.0
+    q_base_value = cfg.inflow.effective_q_test_sm3day if cfg.scenario == ScenarioName.WELL_ESP_SYSTEM else (q_min + q_max) / 2.0
     control_plan = load_control_plan(cfg.control_plan_path)
     rules = [] if control_plan is None else list(control_plan.rules)
     controls = build_time_controls(
@@ -111,6 +111,7 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
         pump_freq_hz=float(pump_for_bounds.freq_hz),
         u_surf_v=None if cfg.motor is None else cfg.motor.u_surf_v,
         p_res_atma=None if cfg.inflow is None else cfg.inflow.p_res_atma,
+        productivity_index=None if cfg.inflow is None else cfg.inflow.productivity_index,
         q_test_sm3day=None if cfg.inflow is None else cfg.inflow.q_test_sm3day,
         p_test_atma=None if cfg.inflow is None else cfg.inflow.p_test_atma,
         p_wh_atma=None if cfg.well is None else cfg.well.p_wh_atma,
@@ -143,15 +144,18 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
             assert cfg.well is not None
             assert cfg.motor is not None
 
-            inflow_cfg = cfg.inflow.model_copy(
-                update={
+            inflow_cfg = type(cfg.inflow).model_validate(
+                {
+                    **cfg.inflow.model_dump(),
                     "p_res_atma": cfg.inflow.p_res_atma if control.p_res_atma is None else float(control.p_res_atma),
+                    "productivity_index": cfg.inflow.productivity_index if control.productivity_index is None else float(control.productivity_index),
                     "q_test_sm3day": cfg.inflow.q_test_sm3day if control.q_test_sm3day is None else float(control.q_test_sm3day),
                     "p_test_atma": cfg.inflow.p_test_atma if control.p_test_atma is None else float(control.p_test_atma),
                 }
             )
-            well_cfg = cfg.well.model_copy(
-                update={
+            well_cfg = type(cfg.well).model_validate(
+                {
+                    **cfg.well.model_dump(),
                     "p_wh_atma": cfg.well.p_wh_atma if control.p_wh_atma is None else float(control.p_wh_atma),
                     "p_cas_atma": cfg.well.p_cas_atma if control.p_cas_atma is None else float(control.p_cas_atma),
                     "t_wf_C": cfg.well.t_wf_C if control.t_wf_C is None else float(control.t_wf_C),
@@ -168,6 +172,9 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
             )
 
             q_liq = float(well.q_liq_sm3day)
+            q_ipr = float(well.ipr.calc_q_liq_sm3day(p_wf_atma))
+            drawdown_atma = float(max(inflow_cfg.p_res_atma - p_wf_atma, 0.0))
+            j_calc_sm3day_atma = 0.0 if drawdown_atma <= 0.0 else q_ipr / drawdown_atma
             intake_fluid = well.fluid.clone()
             intake_fluid.q_liq_sm3day = q_liq
             intake_fluid.mod_after_separation(well.separ.p_ksep_atma, well.separ.t_ksep_C, well.ksep_total_d)
@@ -227,15 +234,21 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
                 "is_running": is_running,
                 "control_label": control.control_label,
                 "control_reason": control.control_reason,
+                "ipr_mode": inflow_cfg.ipr_mode.value,
                 "stage_num": int(well.esp.stage_num),
                 "pump_freq_hz": float(control.pump_freq_hz),
                 "p_wf_atma": float(p_wf_atma),
+                "drawdown_atma": drawdown_atma,
                 "p_int_atma": float(well.p_intake_atma),
                 "p_dis_atma": float(well.p_dis_atma),
                 "p_buf_atma": float(well.p_buf_atma),
+                "p_wh_target_atma": float(well_cfg.p_wh_atma),
                 "p_cas_atma": float(well_cfg.p_cas_atma),
                 "p_res_atma": float(inflow_cfg.p_res_atma),
-                "q_test_sm3day": float(inflow_cfg.q_test_sm3day),
+                "productivity_index": float(inflow_cfg.effective_productivity_index),
+                "j_calc_sm3day_atma": float(j_calc_sm3day_atma),
+                "q_test_sm3day": float(inflow_cfg.effective_q_test_sm3day),
+                "q_ipr_sm3day": float(q_ipr),
                 "p_test_atma": float(inflow_cfg.p_test_atma),
                 "t_wf_c": float(well_cfg.t_wf_C),
                 "t_int_c": float(well.t_intake_C),

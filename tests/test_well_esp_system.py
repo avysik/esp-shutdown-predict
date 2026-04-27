@@ -1,11 +1,21 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from ufpy_esp_synth.config.models import AppConfig
 from ufpy_esp_synth.services.generation import generate_dataframe
 from tests.helpers import artifact_dir
 
 
-def _cfg(*, output_name: str, q_test_sm3day: float = 100.0, p_res_atma: float = 250.0) -> AppConfig:
+def _cfg(
+    *,
+    output_name: str,
+    ipr_mode: str = "linear-pi",
+    productivity_index: float | None = 0.55,
+    q_test_sm3day: float | None = None,
+    p_res_atma: float = 250.0,
+    control_plan_path: str | None = None,
+) -> AppConfig:
     return AppConfig.from_cli(
         scenario="well-esp-system",
         esp_id="1006",
@@ -15,7 +25,7 @@ def _cfg(*, output_name: str, q_test_sm3day: float = 100.0, p_res_atma: float = 
         time_step="15min",
         n_points=4,
         esp_db_path=None,
-        control_plan_path=None,
+        control_plan_path=None if control_plan_path is None else Path(control_plan_path),
         stage_num=250,
         pump_freq_hz=50.0,
         p_int_atma=None,
@@ -32,7 +42,9 @@ def _cfg(*, output_name: str, q_test_sm3day: float = 100.0, p_res_atma: float = 
         fw_fr=None,
         fw_perc=30.0,
         q_gas_free_sm3day=0.0,
+        ipr_mode=ipr_mode,
         p_res_atma=p_res_atma,
+        productivity_index=productivity_index,
         q_test_sm3day=q_test_sm3day,
         p_test_atma=200.0,
         p_wh_atma=20.0,
@@ -57,15 +69,59 @@ def _cfg(*, output_name: str, q_test_sm3day: float = 100.0, p_res_atma: float = 
 def test_well_esp_system_generates_coupled_well_and_motor_outputs() -> None:
     df = generate_dataframe(_cfg(output_name="well_esp_static"), run_id=0, total_runs=1)
 
-    assert {"p_wf_atma", "p_buf_atma", "ksep_total_d", "gas_fraction_pump_d", "motor_i_lin_a"}.issubset(df.columns)
+    assert {
+        "ipr_mode",
+        "productivity_index",
+        "p_wf_atma",
+        "drawdown_atma",
+        "j_calc_sm3day_atma",
+        "q_ipr_sm3day",
+        "p_buf_atma",
+        "ksep_total_d",
+        "gas_fraction_pump_d",
+        "motor_i_lin_a",
+    }.issubset(df.columns)
     assert df["q_liq_sm3day"].iloc[0] > 0
     assert abs(df["p_buf_atma"].iloc[0] - 20.0) < 0.2
     assert df["p_int_atma"].iloc[0] > 0
+    assert df["head_m"].iloc[0] > 0
+    assert df["power_esp_w"].iloc[0] > 0
     assert df["motor_i_lin_a"].iloc[0] > 0
+    assert df["ipr_mode"].iloc[0] == "linear-pi"
+    assert abs(df["j_calc_sm3day_atma"].iloc[0] - df["productivity_index"].iloc[0]) < 1e-6
+    assert abs(df["q_ipr_sm3day"].iloc[0] - df["q_liq_sm3day"].iloc[0]) < 1e-6
 
 
-def test_well_esp_system_responds_to_ipr_test_rate() -> None:
-    df_low = generate_dataframe(_cfg(output_name="well_esp_low", q_test_sm3day=80.0), run_id=0, total_runs=1)
-    df_high = generate_dataframe(_cfg(output_name="well_esp_high", q_test_sm3day=120.0), run_id=0, total_runs=1)
+def test_well_esp_system_responds_to_productivity_index() -> None:
+    df_low = generate_dataframe(_cfg(output_name="well_esp_low", productivity_index=0.40), run_id=0, total_runs=1)
+    df_high = generate_dataframe(_cfg(output_name="well_esp_high", productivity_index=0.90), run_id=0, total_runs=1)
 
+    assert df_high["q_liq_sm3day"].iloc[0] > df_low["q_liq_sm3day"].iloc[0]
+    assert df_high["p_int_atma"].iloc[0] > df_low["p_int_atma"].iloc[0]
+    assert df_high["motor_i_lin_a"].iloc[0] > df_low["motor_i_lin_a"].iloc[0]
+
+
+def test_well_esp_system_keeps_legacy_vogel_test_point_mode() -> None:
+    df_low = generate_dataframe(
+        _cfg(
+            output_name="well_esp_vogel_low",
+            ipr_mode="vogel-test-point",
+            productivity_index=None,
+            q_test_sm3day=25.0,
+        ),
+        run_id=0,
+        total_runs=1,
+    )
+    df_high = generate_dataframe(
+        _cfg(
+            output_name="well_esp_vogel_high",
+            ipr_mode="vogel-test-point",
+            productivity_index=None,
+            q_test_sm3day=45.0,
+        ),
+        run_id=0,
+        total_runs=1,
+    )
+
+    assert df_low["ipr_mode"].iloc[0] == "vogel-test-point"
     assert df_high["q_liq_sm3day"].iloc[0] > df_low["q_liq_sm3day"].iloc[0]

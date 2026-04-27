@@ -1,0 +1,265 @@
+{
+  "base": {
+    "label": "demo_base",
+    "reason": "teacher_demo_2h_windows",
+    "q_liq_sm3day": 82.0,
+    "p_int_atma": 120.0,
+    "t_int_C": 60.0,
+    "pump_freq_hz": 50.0,
+    "u_surf_v": 1000.0
+  },
+  "segments": [
+    {
+      "start": "0min",
+      "end": "15min",
+      "label": "window_0000_q_decline_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 98.0
+    },
+    {
+      "start": "15min",
+      "end": "30min",
+      "label": "window_0000_q_decline_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 95.0
+    },
+    {
+      "start": "30min",
+      "end": "45min",
+      "label": "window_0000_q_decline_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 92.5
+    },
+    {
+      "start": "45min",
+      "end": "60min",
+      "label": "window_0000_q_decline_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 89.0
+    },
+    {
+      "start": "60min",
+      "end": "75min",
+      "label": "window_0000_q_decline_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 86.5
+    },
+    {
+      "start": "75min",
+      "end": "90min",
+      "label": "window_0000_q_decline_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 84.0
+    },
+    {
+      "start": "90min",
+      "end": "105min",
+      "label": "window_0000_q_decline_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 81.5
+    },
+    {
+      "start": "105min",
+      "end": "120min",
+      "label": "window_0000_q_decline_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 79.0
+    },
+    {
+      "start": "120min",
+      "end": "135min",
+      "label": "window_0000_q_decline_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 76.0
+    },
+    {
+      "start": "135min",
+      "end": "150min",
+      "label": "window_0001_q_growth_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 70.0
+    },
+    {
+      "start": "150min",
+      "end": "165min",
+      "label": "window_0001_q_growth_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 72.5
+    },
+    {
+      "start": "165min",
+      "end": "180min",
+      "label": "window_0001_q_growth_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 75.5
+    },
+    {
+      "start": "180min",
+      "end": "195min",
+      "label": "window_0001_q_growth_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 78.0
+    },
+    {
+      "start": "195min",
+      "end": "210min",
+      "label": "window_0001_q_growth_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 80.5
+    },
+    {
+      "start": "210min",
+      "end": "225min",
+      "label": "window_0001_q_growth_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 83.0
+    },
+    {
+      "start": "225min",
+      "end": "240min",
+      "label": "window_0001_q_growth_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 86.0
+    },
+    {
+      "start": "240min",
+      "end": "255min",
+      "label": "window_0001_q_growth_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 89.0
+    },
+    {
+      "start": "255min",
+      "end": "270min",
+      "label": "window_0001_q_growth_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 92.0
+    },
+    {
+      "start": "270min",
+      "end": "285min",
+      "label": "window_0002_q_decline_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 90.0
+    },
+    {
+      "start": "285min",
+      "end": "300min",
+      "label": "window_0002_q_decline_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 89.2
+    },
+    {
+      "start": "300min",
+      "end": "315min",
+      "label": "window_0002_q_decline_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 88.7
+    },
+    {
+      "start": "315min",
+      "end": "330min",
+      "label": "window_0002_q_decline_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 87.8
+    },
+    {
+      "start": "330min",
+      "end": "345min",
+      "label": "window_0002_q_decline_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 86.6
+    },
+    {
+      "start": "345min",
+      "end": "360min",
+      "label": "window_0002_q_decline_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 85.9
+    },
+    {
+      "start": "360min",
+      "end": "375min",
+      "label": "window_0002_q_decline_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 84.7
+    },
+    {
+      "start": "375min",
+      "end": "390min",
+      "label": "window_0002_q_decline_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 83.5
+    },
+    {
+      "start": "390min",
+      "end": "405min",
+      "label": "window_0002_q_decline_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 82.0
+    },
+    {
+      "start": "405min",
+      "end": "420min",
+      "label": "window_0003_q_growth_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 78.0
+    },
+    {
+      "start": "420min",
+      "end": "435min",
+      "label": "window_0003_q_growth_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 79.5
+    },
+    {
+      "start": "435min",
+      "end": "450min",
+      "label": "window_0003_q_growth_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 81.5
+    },
+    {
+      "start": "450min",
+      "end": "465min",
+      "label": "window_0003_q_growth_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 82.0
+    },
+    {
+      "start": "465min",
+      "end": "480min",
+      "label": "window_0003_q_growth_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 83.8
+    },
+    {
+      "start": "480min",
+      "end": "495min",
+      "label": "window_0003_q_growth_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 84.5
+    },
+    {
+      "start": "495min",
+      "end": "510min",
+      "label": "window_0003_q_growth_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 85.2
+    },
+    {
+      "start": "510min",
+      "end": "525min",
+      "label": "window_0003_q_growth_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 86.3
+    },
+    {
+      "start": "525min",
+      "end": "540min",
+      "label": "window_0003_q_growth_soft_demo",
+      "reason": "2h_window_9_points",
+      "q_liq_sm3day": 88.0
+    }
+  ]
+}

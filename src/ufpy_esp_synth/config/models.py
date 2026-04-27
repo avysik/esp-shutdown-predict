@@ -35,6 +35,26 @@ class ScenarioName(str, Enum):
         return ScenarioName(v)
 
 
+class IPRMode(str, Enum):
+    LINEAR_PI = "linear-pi"
+    VOGEL_TEST_POINT = "vogel-test-point"
+
+    @staticmethod
+    def normalize(value: str) -> "IPRMode":
+        v = (value or "").strip().lower().replace("_", "-")
+        aliases = {
+            "linear": "linear-pi",
+            "linear-pi": "linear-pi",
+            "pi": "linear-pi",
+            "vogel": "vogel-test-point",
+            "vogel-test-point": "vogel-test-point",
+            "test-point": "vogel-test-point",
+        }
+        if v in aliases:
+            v = aliases[v]
+        return IPRMode(v)
+
+
 class PumpConfig(BaseModel):
     esp_id: str = Field(..., min_length=1)
     stage_num: Optional[int] = Field(None, ge=1)
@@ -52,9 +72,39 @@ class HydraulicConfig(BaseModel):
 
 
 class InflowConfig(BaseModel):
+    ipr_mode: IPRMode = Field(IPRMode.LINEAR_PI)
     p_res_atma: float = Field(..., gt=0)
-    q_test_sm3day: float = Field(..., ge=0)
+    productivity_index: Optional[float] = Field(None, gt=0)
+    q_test_sm3day: Optional[float] = Field(None, ge=0)
     p_test_atma: float = Field(..., ge=0)
+
+    @model_validator(mode="after")
+    def _validate_ipr_inputs(self) -> "InflowConfig":
+        if self.p_test_atma >= self.p_res_atma:
+            raise ValueError("p_test_atma must be lower than p_res_atma for IPR calculations.")
+        if self.ipr_mode == IPRMode.LINEAR_PI:
+            if self.productivity_index is None:
+                raise ValueError("productivity_index is required for linear-pi inflow mode.")
+        elif self.ipr_mode == IPRMode.VOGEL_TEST_POINT:
+            if self.q_test_sm3day is None:
+                raise ValueError("q_test_sm3day is required for vogel-test-point inflow mode.")
+        return self
+
+    @property
+    def effective_productivity_index(self) -> float:
+        if self.productivity_index is not None:
+            return float(self.productivity_index)
+        if self.q_test_sm3day is None:
+            return 0.0
+        dp = self.p_res_atma - self.p_test_atma
+        return 0.0 if dp <= 0 else float(self.q_test_sm3day) / float(dp)
+
+    @property
+    def effective_q_test_sm3day(self) -> float:
+        if self.q_test_sm3day is not None:
+            return float(self.q_test_sm3day)
+        dp = self.p_res_atma - self.p_test_atma
+        return max(0.0, float(self.effective_productivity_index) * float(dp))
 
 
 class WellConfig(BaseModel):
@@ -245,7 +295,9 @@ class AppConfig(BaseModel):
         inflow = None
         if scenario == ScenarioName.WELL_ESP_SYSTEM:
             inflow = InflowConfig(
+                ipr_mode=IPRMode.normalize(kwargs["ipr_mode"]),
                 p_res_atma=kwargs["p_res_atma"],
+                productivity_index=kwargs.get("productivity_index"),
                 q_test_sm3day=kwargs["q_test_sm3day"],
                 p_test_atma=kwargs["p_test_atma"],
             )

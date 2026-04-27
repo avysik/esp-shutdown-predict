@@ -1,0 +1,44 @@
+{
+  "base": {
+    "label": "stable",
+    "reason": "normal_operation",
+    "q_liq_sm3day": 82.0,
+    "p_int_atma": 120.0,
+    "u_surf_v": 1000.0
+  },
+  "segments": [
+    {
+      "start": "3d14h47min",
+      "end": "3d15h00min",
+      "label": "overpressure",
+      "reason": "intake_overpressure",
+      "p_int_atma": 240.0
+    },
+    {
+      "start": "4d00h00min",
+      "end": "4d12h00min",
+      "label": "restart",
+      "reason": "recovered",
+      "q_liq_sm3day": 76.0,
+      "p_int_atma": 118.0,
+      "pump_freq_hz": 50.0,
+      "u_surf_v": 1000.0
+    }
+  ],
+  "rules": [
+    {
+      "name": "trip_on_intake_overpressure",
+      "stage": "pre",
+      "metric": "p_int_atma",
+      "op": ">=",
+      "value": 200.0,
+      "max_triggers": 1,
+      "action": {
+        "kind": "shutdown",
+        "duration": "9h",
+        "label": "shutdown",
+        "reason": "auto_trip_intake_overpressure"
+      }
+    }
+  ]
+}

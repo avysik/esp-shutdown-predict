@@ -20,6 +20,7 @@ class ControlOverride(BaseModel):
     pump_freq_hz: Optional[float] = Field(None, ge=0)
     u_surf_v: Optional[float] = Field(None, ge=0)
     p_res_atma: Optional[float] = Field(None, ge=0)
+    productivity_index: Optional[float] = Field(None, gt=0)
     q_test_sm3day: Optional[float] = Field(None, ge=0)
     p_test_atma: Optional[float] = Field(None, ge=0)
     p_wh_atma: Optional[float] = Field(None, ge=0)
@@ -93,6 +94,7 @@ class TimeStepControl:
     control_label: str
     control_reason: str
     p_res_atma: Optional[float] = None
+    productivity_index: Optional[float] = None
     q_test_sm3day: Optional[float] = None
     p_test_atma: Optional[float] = None
     p_wh_atma: Optional[float] = None
@@ -148,6 +150,7 @@ def _apply_override(state: TimeStepControl, override: ControlOverride) -> TimeSt
         pump_freq_hz=state.pump_freq_hz if override.pump_freq_hz is None else float(override.pump_freq_hz),
         u_surf_v=state.u_surf_v if override.u_surf_v is None else float(override.u_surf_v),
         p_res_atma=state.p_res_atma if override.p_res_atma is None else float(override.p_res_atma),
+        productivity_index=state.productivity_index if override.productivity_index is None else float(override.productivity_index),
         q_test_sm3day=state.q_test_sm3day if override.q_test_sm3day is None else float(override.q_test_sm3day),
         p_test_atma=state.p_test_atma if override.p_test_atma is None else float(override.p_test_atma),
         p_wh_atma=state.p_wh_atma if override.p_wh_atma is None else float(override.p_wh_atma),
@@ -196,6 +199,7 @@ def _build_rule_context(control: TimeStepControl, row: Optional[dict[str, Any]] 
         "pump_freq_hz": control.pump_freq_hz,
         "u_surf_v": control.u_surf_v,
         "p_res_atma": control.p_res_atma,
+        "productivity_index": control.productivity_index,
         "q_test_sm3day": control.q_test_sm3day,
         "p_test_atma": control.p_test_atma,
         "p_wh_atma": control.p_wh_atma,
@@ -299,6 +303,7 @@ def build_time_controls(
     pump_freq_hz: float,
     u_surf_v: Optional[float],
     p_res_atma: Optional[float] = None,
+    productivity_index: Optional[float] = None,
     q_test_sm3day: Optional[float] = None,
     p_test_atma: Optional[float] = None,
     p_wh_atma: Optional[float] = None,
@@ -320,6 +325,7 @@ def build_time_controls(
                 pump_freq_hz=float(pump_freq_hz),
                 u_surf_v=None if u_surf_v is None else float(u_surf_v),
                 p_res_atma=None if p_res_atma is None else float(p_res_atma),
+                productivity_index=None if productivity_index is None else float(productivity_index),
                 q_test_sm3day=None if q_test_sm3day is None else float(q_test_sm3day),
                 p_test_atma=None if p_test_atma is None else float(p_test_atma),
                 p_wh_atma=None if p_wh_atma is None else float(p_wh_atma),
@@ -340,6 +346,7 @@ def build_time_controls(
         pump_freq_hz=float(pump_freq_hz if base.pump_freq_hz is None else base.pump_freq_hz),
         u_surf_v=(None if u_surf_v is None and base.u_surf_v is None else float(u_surf_v if base.u_surf_v is None else base.u_surf_v)),
         p_res_atma=(None if p_res_atma is None and base.p_res_atma is None else float(p_res_atma if base.p_res_atma is None else base.p_res_atma)),
+        productivity_index=(None if productivity_index is None and base.productivity_index is None else float(productivity_index if base.productivity_index is None else base.productivity_index)),
         q_test_sm3day=(None if q_test_sm3day is None and base.q_test_sm3day is None else float(q_test_sm3day if base.q_test_sm3day is None else base.q_test_sm3day)),
         p_test_atma=(None if p_test_atma is None and base.p_test_atma is None else float(p_test_atma if base.p_test_atma is None else base.p_test_atma)),
         p_wh_atma=(None if p_wh_atma is None and base.p_wh_atma is None else float(p_wh_atma if base.p_wh_atma is None else base.p_wh_atma)),
