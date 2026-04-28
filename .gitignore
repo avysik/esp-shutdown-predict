@@ -9,3 +9,5 @@ data
 *pytest*
 out_*/
 pytest-cache-files-*
+.test_runs
+#examples
