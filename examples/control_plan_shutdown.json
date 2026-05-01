@@ -1,0 +1,52 @@
+{
+  "base": {
+    "label": "stable",
+    "reason": "normal_operation",
+    "q_liq_sm3day": 82.0,
+    "p_int_atma": 120.0,
+    "u_surf_v": 1000.0
+  },
+  "segments": [
+    {
+      "start": "0min",
+      "end": "3d",
+      "label": "stable",
+      "reason": "normal_operation"
+    },
+    {
+      "start": "3d",
+      "end": "3d14h47min",
+      "label": "pre_event_day",
+      "reason": "normal_operation"
+    }
+  ],
+  "events": [
+    {
+      "at": "3d14h47min",
+      "duration": "13min",
+      "kind": "override",
+      "label": "overpressure",
+      "reason": "intake_overpressure",
+      "p_int_atma": 240.0
+    },
+    {
+      "at": "3d15h00min",
+      "duration": "9h",
+      "kind": "shutdown",
+      "label": "shutdown",
+      "reason": "protection_trip"
+    },
+    {
+      "at": "4d00h00min",
+      "duration": "12h",
+      "kind": "override",
+      "label": "restart",
+      "reason": "recovered",
+      "running": true,
+      "q_liq_sm3day": 76.0,
+      "pump_freq_hz": 50.0,
+      "u_surf_v": 1000.0,
+      "p_int_atma": 118.0
+    }
+  ]
+}

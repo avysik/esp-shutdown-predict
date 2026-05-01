@@ -1,0 +1,13 @@
+__pycache__
+*.egg-info
+data
+*.parquet
+.venv
+.idea
+.pytest_cache
+.pytest-tmp
+*pytest*
+out_*/
+pytest-cache-files-*
+.test_runs
+#examples
