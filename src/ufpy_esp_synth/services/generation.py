@@ -163,13 +163,14 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
             )
 
             well = build_well_esp(repo, cfg.pump, cfg.pvt, inflow_cfg, well_cfg)
-            p_wf_atma = solve_well_from_pwh(
+            solve_result = solve_well_from_pwh(
                 well,
                 p_wh_atma=well_cfg.p_wh_atma,
                 t_wf_C=well_cfg.t_wf_C,
                 p_cas_atma=well_cfg.p_cas_atma,
                 esp_freq_hz=float(control.pump_freq_hz),
             )
+            p_wf_atma = solve_result.p_wf_atma
 
             q_liq = float(well.q_liq_sm3day)
             q_ipr = float(well.ipr.calc_q_liq_sm3day(p_wf_atma))
@@ -243,6 +244,8 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
                 "p_dis_atma": float(well.p_dis_atma),
                 "p_buf_atma": float(well.p_buf_atma),
                 "p_wh_target_atma": float(well_cfg.p_wh_atma),
+                "wellhead_target_error_atma": float(solve_result.error_atma),
+                "well_solver_ok": bool(solve_result.converged),
                 "p_cas_atma": float(well_cfg.p_cas_atma),
                 "p_res_atma": float(inflow_cfg.p_res_atma),
                 "productivity_index": float(inflow_cfg.effective_productivity_index),

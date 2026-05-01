@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -13,6 +14,14 @@ from ufpy.well.well_esp import WellESP
 
 from ufpy_esp_synth.config.models import IPRMode, InflowConfig, MotorConfig, PumpConfig, PVTConfig, WellConfig
 from ufpy_esp_synth.domain.ipr_models import LinearProductivityIPR
+
+
+@dataclass(frozen=True)
+class WellSolveResult:
+    p_wf_atma: float
+    p_buf_atma: float
+    error_atma: float
+    converged: bool
 
 
 def resolve_default_esp_db_path() -> Path:
@@ -186,23 +195,88 @@ def solve_well_from_pwh(
     p_cas_atma: float,
     esp_freq_hz: float,
     tol_atma: float = 0.05,
+    scan_steps: int = 64,
     max_iter: int = 60,
-) -> float:
-    p_wf_max = well.ipr.p_res_atma if well.ipr.p_res_atma > 0 else 500.0
-    p_lo, p_hi = p_wh_atma, p_wf_max
-    last_p_mid = p_hi
+) -> WellSolveResult:
+    def evaluate(p_wf_atma: float) -> float:
+        well.calc_from_pwf(p_wf_atma, t_wf_C, p_cas_atma=p_cas_atma, esp_freq_hz=esp_freq_hz)
+        return well.p_buf_atma - p_wh_atma
 
+    p_wf_max = well.ipr.p_res_atma if well.ipr.p_res_atma > 0 else 500.0
+    p_wf_min = 0.0
+
+    p_prev = p_wf_min
+    diff_prev = evaluate(p_prev)
+    best_p = p_prev
+    best_err = abs(diff_prev)
+
+    if best_err < tol_atma:
+        return WellSolveResult(
+            p_wf_atma=float(p_prev),
+            p_buf_atma=float(well.p_buf_atma),
+            error_atma=float(best_err),
+            converged=True,
+        )
+
+    bracket_lo: Optional[float] = None
+    bracket_hi: Optional[float] = None
+
+    for step in range(1, scan_steps + 1):
+        p_cur = p_wf_min + (p_wf_max - p_wf_min) * step / scan_steps
+        diff_cur = evaluate(p_cur)
+        err_cur = abs(diff_cur)
+        if err_cur < best_err:
+            best_p = p_cur
+            best_err = err_cur
+        if err_cur < tol_atma:
+            return WellSolveResult(
+                p_wf_atma=float(p_cur),
+                p_buf_atma=float(well.p_buf_atma),
+                error_atma=float(err_cur),
+                converged=True,
+            )
+        if diff_prev == 0 or diff_prev * diff_cur < 0:
+            bracket_lo = p_prev
+            bracket_hi = p_cur
+            break
+        p_prev = p_cur
+        diff_prev = diff_cur
+
+    if bracket_lo is None or bracket_hi is None:
+        evaluate(best_p)
+        return WellSolveResult(
+            p_wf_atma=float(best_p),
+            p_buf_atma=float(well.p_buf_atma),
+            error_atma=float(abs(well.p_buf_atma - p_wh_atma)),
+            converged=False,
+        )
+
+    p_lo, p_hi = bracket_lo, bracket_hi
+    last_p_mid = p_hi
     for _ in range(max_iter):
         p_mid = (p_lo + p_hi) / 2.0
         last_p_mid = p_mid
-        well.calc_from_pwf(p_mid, t_wf_C, p_cas_atma=p_cas_atma, esp_freq_hz=esp_freq_hz)
-        diff = well.p_buf_atma - p_wh_atma
-        if abs(diff) < tol_atma:
-            return p_mid
+        diff = evaluate(p_mid)
+        err = abs(diff)
+        if err < best_err:
+            best_p = p_mid
+            best_err = err
+        if err < tol_atma:
+            return WellSolveResult(
+                p_wf_atma=float(p_mid),
+                p_buf_atma=float(well.p_buf_atma),
+                error_atma=float(err),
+                converged=True,
+            )
         if diff > 0:
             p_hi = p_mid
         else:
             p_lo = p_mid
 
-    well.calc_from_pwf(last_p_mid, t_wf_C, p_cas_atma=p_cas_atma, esp_freq_hz=esp_freq_hz)
-    return last_p_mid
+    evaluate(best_p)
+    return WellSolveResult(
+        p_wf_atma=float(best_p),
+        p_buf_atma=float(well.p_buf_atma),
+        error_atma=float(abs(well.p_buf_atma - p_wh_atma)),
+        converged=False,
+    )

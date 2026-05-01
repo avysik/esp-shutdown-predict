@@ -149,6 +149,8 @@ SCHEMA_BY_SCENARIO: dict[ScenarioName, list[str]] = {
         "p_dis_atma",
         "p_buf_atma",
         "p_wh_target_atma",
+        "wellhead_target_error_atma",
+        "well_solver_ok",
         "p_cas_atma",
         "p_res_atma",
         "productivity_index",

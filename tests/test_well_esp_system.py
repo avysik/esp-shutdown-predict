@@ -10,6 +10,7 @@ from tests.helpers import artifact_dir
 def _cfg(
     *,
     output_name: str,
+    n_points: int = 4,
     ipr_mode: str = "linear-pi",
     productivity_index: float | None = 0.55,
     q_test_sm3day: float | None = None,
@@ -23,7 +24,7 @@ def _cfg(
         workers=1,
         output_dir=artifact_dir(output_name),
         time_step="15min",
-        n_points=4,
+        n_points=n_points,
         esp_db_path=None,
         control_plan_path=None if control_plan_path is None else Path(control_plan_path),
         stage_num=250,
@@ -125,3 +126,21 @@ def test_well_esp_system_keeps_legacy_vogel_test_point_mode() -> None:
 
     assert df_low["ipr_mode"].iloc[0] == "vogel-test-point"
     assert df_high["q_liq_sm3day"].iloc[0] > df_low["q_liq_sm3day"].iloc[0]
+
+
+def test_well_esp_system_tracks_target_wellhead_pressure_across_demo_window() -> None:
+    df = generate_dataframe(
+        _cfg(
+            output_name="well_esp_static",
+            n_points=9,
+            control_plan_path="examples/control_plan_well_productivity_decline_2h.json",
+            productivity_index=0.55,
+        ),
+        run_id=0,
+        total_runs=1,
+    )
+
+    assert len(df) == 9
+    assert df["well_solver_ok"].all()
+    assert df["wellhead_target_error_atma"].max() < 0.05
+    assert (df["p_buf_atma"] - df["p_wh_target_atma"]).abs().max() < 0.05
