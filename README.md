@@ -65,7 +65,7 @@ python -m pip install -e ./ufpy
 Install this project:
 
 ```bash
-git clone https://github.com/your-org/esp-shutdown-predict.git
+git clone https://github.com/avysik/esp-shutdown-predict
 cd esp-shutdown-predict
 python -m pip install -e .
 ```
