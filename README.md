@@ -278,6 +278,106 @@ If the parquet contains multiple windows, use:
 .\.venv\Scripts\python.exe -m ufpy_esp_synth.plot_windows --input-parquet .\out_demo_2h\esp-system__esp_1006__run_00000.parquet --output-png .\out_demo_2h\window_analysis.png --points-per-window 9
 ```
 
+## Fleet Generator
+
+For fleet-scale dataset generation use `src/wrapper.py` in `fleet` mode.
+
+The fleet generator:
+- loads well archetypes from `examples/fleet_archetypes/well_esp_archetypes_v1.json`
+- samples deterministic base states inside each archetype with Latin hypercube sampling
+- selects a compatible `esp_id` and `stage_num`
+- calibrates a stable base operating point
+- overlays recommended scenario families on top of that base point
+- writes one main parquet, one telemetry parquet, and one `control_plan.json` per window
+
+### Pilot Run
+
+Use this first to verify that end-to-end generation works on your machine:
+
+```powershell
+.\.venv\Scripts\python.exe .\src\wrapper.py --mode fleet --archetype-filter A03 --samples-per-archetype 1 --candidate-multiplier 12 --workers 1 --limit 4 --output-base-dir .\out_fleet_pilot_v1
+```
+
+This command generates a small real batch:
+- one archetype: `A03`
+- one accepted base sample
+- up to four scenario windows
+- full parquet and telemetry outputs
+
+### Big Batch Run
+
+Use this on the stronger workstation after the pilot succeeds:
+
+```powershell
+.\.venv\Scripts\python.exe .\src\wrapper.py --mode fleet --samples-per-archetype 100 --candidate-multiplier 12 --workers 16 --output-base-dir .\out_fleet_batch_v1
+```
+
+### Optional Dry Run
+
+If you want to estimate coverage before spending full compute time, run:
+
+```powershell
+.\.venv\Scripts\python.exe .\src\wrapper.py --mode fleet --samples-per-archetype 100 --candidate-multiplier 12 --workers 1 --dry-run --output-base-dir .\out_fleet_batch_v1_dry
+```
+
+Dry run builds the fleet plan, calibrates candidate base states, selects pumps, and writes `fleet_manifest.parquet` plus `fleet_summary.json`, but it does not execute the full scenario-parquet generation for every window.
+
+### What The Big Batch Produces
+
+With the current `v1` archetype library, default `recommended_only=true`, all three severities enabled, and assuming all `10` archetypes accept `100` base samples each, the batch expands as follows:
+
+- accepted base states: up to `1000`
+- scenario families:
+  - `stable_normal`
+  - `inflow_deterioration`
+  - `wellhead_backpressure_growth`
+  - `watercut_growth`
+  - `viscosity_growth`
+  - `voltage_sag`
+- fast windows:
+  - `stable_normal`
+  - `inflow_deterioration`
+  - `wellhead_backpressure_growth`
+  - `voltage_sag`
+  - spec: `2h`, `9` points, `15min`
+- slow windows:
+  - `watercut_growth`
+  - `viscosity_growth`
+  - spec: `4h`, `9` points, `30min`
+
+In the current recommendation matrix this corresponds to `85` windows per full archetype round, so the `100`-sample batch target is:
+
+- total windows: up to `8500`
+- total main-parquet rows: `76,500`
+- total telemetry-parquet rows: `76,500`
+
+Expected family-level window counts in that case:
+
+- `stable_normal`: `1000`
+- `inflow_deterioration`: `600`
+- `wellhead_backpressure_growth`: `2400`
+- `watercut_growth`: `1200`
+- `viscosity_growth`: `900`
+- `voltage_sag`: `2400`
+
+Each window directory contains:
+- `control_plan.json`
+- one main parquet
+- one telemetry parquet
+
+The dataset root also contains:
+- `fleet_manifest.parquet`
+- `fleet_summary.json`
+
+Important:
+- the actual total can be lower if some candidate base states fail calibration
+- run the pilot first
+- use `dry-run` to estimate the exact accepted volume before a multi-day production batch
+- current telemetry semantics are aligned to field-style values:
+  - `Напряжение` is exported as a `400 V`-equivalent line voltage
+  - `Р на приеме насоса` is exported in `MPa`
+  - `Загрузка` is exported in `%`
+
 ## Main Parquet: Important `well-esp-system` Fields
 
 Useful engineering columns:

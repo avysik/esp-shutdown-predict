@@ -1,0 +1,331 @@
+{
+  "library_name": "well_esp_fleet_archetypes_v1",
+  "source_basis": {
+    "field_reference": "src/data/mex.xlsx",
+    "design_note": "docs/scenario_design_from_bp1_01_05_tr_0001_v3_00.md",
+    "method": "Expert archetypes constrained by mex.xlsx p05-p95-style field ranges and by steady-state scenario-design rules."
+  },
+  "global_guidance": {
+    "fast_window_default": {
+      "duration": "2h",
+      "points": 9,
+      "time_step": "15min",
+      "use_for": [
+        "inflow_deterioration",
+        "wellhead_backpressure_growth",
+        "voltage_sag"
+      ]
+    },
+    "slow_window_default": {
+      "duration": "4h",
+      "points": 9,
+      "time_step": "30min",
+      "use_for": [
+        "watercut_growth",
+        "viscosity_growth"
+      ]
+    },
+    "notes": [
+      "Pump frequency is not a primary fleet archetype axis. Treat it as operator action in a second-stage generator.",
+      "Select esp_id by nearest nominal rate/head/power match, not randomly.",
+      "Use Latin hypercube sampling inside each archetype range, not globally over the whole fleet."
+    ]
+  },
+  "archetypes": [
+    {
+      "id": "A01",
+      "name": "low_rate_high_head_deep",
+      "intent": "Low-rate, relatively deep well with a high-head pump requirement.",
+      "pump_selection_targets": {
+        "pump_nominal_rate_sm3day": [30, 60],
+        "pump_nominal_head_m": [2200, 2625],
+        "motor_nominal_power_kw": [32, 75]
+      },
+      "base_input_ranges": {
+        "q_liq_target_sm3day": [15, 40],
+        "p_int_atma": [20, 45],
+        "p_wh_atma": [12, 24],
+        "h_esp_m": [2500, 3040],
+        "h_perf_minus_h_esp_m": [180, 320],
+        "d_tub_mm": [58, 65],
+        "d_cas_mm": [140, 160],
+        "p_res_atma": [210, 290],
+        "productivity_index": [0.04, 0.20],
+        "fw_perc": [20, 60],
+        "muob_cP": [1.2, 3.5],
+        "u_surf_v": [960, 1040]
+      },
+      "recommended_scenarios": [
+        "stable_normal",
+        "wellhead_backpressure_growth",
+        "voltage_sag"
+      ]
+    },
+    {
+      "id": "A02",
+      "name": "low_rate_high_watercut_mature",
+      "intent": "Mature low-rate producer with high watercut and limited inflow margin.",
+      "pump_selection_targets": {
+        "pump_nominal_rate_sm3day": [30, 80],
+        "pump_nominal_head_m": [1800, 2500],
+        "motor_nominal_power_kw": [32, 90]
+      },
+      "base_input_ranges": {
+        "q_liq_target_sm3day": [10, 50],
+        "p_int_atma": [18, 40],
+        "p_wh_atma": [11, 24],
+        "h_esp_m": [2100, 2900],
+        "h_perf_minus_h_esp_m": [150, 300],
+        "d_tub_mm": [58, 65],
+        "d_cas_mm": [140, 168],
+        "p_res_atma": [190, 260],
+        "productivity_index": [0.04, 0.30],
+        "fw_perc": [75, 97],
+        "muob_cP": [1.0, 2.8],
+        "u_surf_v": [960, 1040]
+      },
+      "recommended_scenarios": [
+        "stable_normal",
+        "watercut_growth",
+        "voltage_sag"
+      ]
+    },
+    {
+      "id": "A03",
+      "name": "balanced_medium_rate",
+      "intent": "Middle-of-fleet balanced producer near median field conditions.",
+      "pump_selection_targets": {
+        "pump_nominal_rate_sm3day": [60, 120],
+        "pump_nominal_head_m": [1900, 2400],
+        "motor_nominal_power_kw": [45, 90]
+      },
+      "base_input_ranges": {
+        "q_liq_target_sm3day": [40, 90],
+        "p_int_atma": [25, 45],
+        "p_wh_atma": [15, 28],
+        "h_esp_m": [2200, 2800],
+        "h_perf_minus_h_esp_m": [180, 320],
+        "d_tub_mm": [60, 68],
+        "d_cas_mm": [146, 168],
+        "p_res_atma": [220, 300],
+        "productivity_index": [0.15, 0.80],
+        "fw_perc": [30, 70],
+        "muob_cP": [1.2, 3.5],
+        "u_surf_v": [970, 1030]
+      },
+      "recommended_scenarios": [
+        "stable_normal",
+        "inflow_deterioration",
+        "wellhead_backpressure_growth",
+        "voltage_sag"
+      ]
+    },
+    {
+      "id": "A04",
+      "name": "medium_rate_high_head",
+      "intent": "Producer with moderate rate but higher head demand and deeper lift.",
+      "pump_selection_targets": {
+        "pump_nominal_rate_sm3day": [80, 160],
+        "pump_nominal_head_m": [2100, 2625],
+        "motor_nominal_power_kw": [63, 125]
+      },
+      "base_input_ranges": {
+        "q_liq_target_sm3day": [70, 130],
+        "p_int_atma": [25, 50],
+        "p_wh_atma": [16, 30],
+        "h_esp_m": [2400, 3000],
+        "h_perf_minus_h_esp_m": [180, 340],
+        "d_tub_mm": [60, 68],
+        "d_cas_mm": [146, 168],
+        "p_res_atma": [230, 320],
+        "productivity_index": [0.20, 1.20],
+        "fw_perc": [25, 75],
+        "muob_cP": [1.2, 4.0],
+        "u_surf_v": [970, 1030]
+      },
+      "recommended_scenarios": [
+        "stable_normal",
+        "wellhead_backpressure_growth",
+        "viscosity_growth",
+        "voltage_sag"
+      ]
+    },
+    {
+      "id": "A05",
+      "name": "high_rate_high_power",
+      "intent": "Higher-rate producer that requires a significantly stronger electrical drive.",
+      "pump_selection_targets": {
+        "pump_nominal_rate_sm3day": [180, 320],
+        "pump_nominal_head_m": [1700, 2300],
+        "motor_nominal_power_kw": [110, 200]
+      },
+      "base_input_ranges": {
+        "q_liq_target_sm3day": [150, 280],
+        "p_int_atma": [24, 55],
+        "p_wh_atma": [16, 32],
+        "h_esp_m": [2100, 2850],
+        "h_perf_minus_h_esp_m": [180, 320],
+        "d_tub_mm": [62, 73],
+        "d_cas_mm": [146, 178],
+        "p_res_atma": [230, 330],
+        "productivity_index": [0.80, 3.00],
+        "fw_perc": [20, 80],
+        "muob_cP": [1.0, 3.0],
+        "u_surf_v": [970, 1030]
+      },
+      "recommended_scenarios": [
+        "stable_normal",
+        "wellhead_backpressure_growth",
+        "watercut_growth",
+        "voltage_sag"
+      ]
+    },
+    {
+      "id": "A06",
+      "name": "ultra_high_rate_surface_limited",
+      "intent": "Upper-tail high-rate case where surface backpressure sensitivity matters more than inflow scarcity.",
+      "pump_selection_targets": {
+        "pump_nominal_rate_sm3day": [220, 320],
+        "pump_nominal_head_m": [1600, 2000],
+        "motor_nominal_power_kw": [140, 180]
+      },
+      "base_input_ranges": {
+        "q_liq_target_sm3day": [220, 320],
+        "p_int_atma": [35, 85],
+        "p_wh_atma": [18, 30],
+        "h_esp_m": [1800, 2400],
+        "h_perf_minus_h_esp_m": [140, 260],
+        "d_tub_mm": [68, 79],
+        "d_cas_mm": [160, 178],
+        "p_res_atma": [230, 270],
+        "productivity_index": [1.20, 2.40],
+        "fw_perc": [15, 80],
+        "muob_cP": [1.0, 2.5],
+        "u_surf_v": [980, 1030]
+      },
+      "recommended_scenarios": [
+        "stable_normal",
+        "wellhead_backpressure_growth",
+        "voltage_sag"
+      ]
+    },
+    {
+      "id": "A07",
+      "name": "deep_high_power_heavy_lift",
+      "intent": "Deep heavy-lift case with large head demand and elevated installed power.",
+      "pump_selection_targets": {
+        "pump_nominal_rate_sm3day": [50, 140],
+        "pump_nominal_head_m": [2300, 2625],
+        "motor_nominal_power_kw": [90, 180]
+      },
+      "base_input_ranges": {
+        "q_liq_target_sm3day": [25, 80],
+        "p_int_atma": [20, 42],
+        "p_wh_atma": [14, 26],
+        "h_esp_m": [2800, 3040],
+        "h_perf_minus_h_esp_m": [180, 320],
+        "d_tub_mm": [58, 65],
+        "d_cas_mm": [146, 168],
+        "p_res_atma": [220, 300],
+        "productivity_index": [0.08, 0.50],
+        "fw_perc": [20, 75],
+        "muob_cP": [1.5, 4.5],
+        "u_surf_v": [970, 1030]
+      },
+      "recommended_scenarios": [
+        "stable_normal",
+        "viscosity_growth",
+        "wellhead_backpressure_growth",
+        "voltage_sag"
+      ]
+    },
+    {
+      "id": "A08",
+      "name": "mature_energy_intensive",
+      "intent": "Low-to-medium rate producer with elevated specific-energy burden and aging-field behavior.",
+      "pump_selection_targets": {
+        "pump_nominal_rate_sm3day": [40, 100],
+        "pump_nominal_head_m": [2000, 2500],
+        "motor_nominal_power_kw": [45, 125]
+      },
+      "base_input_ranges": {
+        "q_liq_target_sm3day": [15, 60],
+        "p_int_atma": [19, 35],
+        "p_wh_atma": [12, 26],
+        "h_esp_m": [2300, 2950],
+        "h_perf_minus_h_esp_m": [180, 320],
+        "d_tub_mm": [58, 65],
+        "d_cas_mm": [146, 168],
+        "p_res_atma": [200, 280],
+        "productivity_index": [0.05, 0.35],
+        "fw_perc": [70, 97],
+        "muob_cP": [1.5, 5.0],
+        "u_surf_v": [970, 1030]
+      },
+      "recommended_scenarios": [
+        "stable_normal",
+        "watercut_growth",
+        "viscosity_growth"
+      ]
+    },
+    {
+      "id": "A09",
+      "name": "high_watercut_high_rate",
+      "intent": "High-liquid-rate producer already operating at high watercut.",
+      "pump_selection_targets": {
+        "pump_nominal_rate_sm3day": [140, 300],
+        "pump_nominal_head_m": [1700, 2300],
+        "motor_nominal_power_kw": [90, 180]
+      },
+      "base_input_ranges": {
+        "q_liq_target_sm3day": [120, 240],
+        "p_int_atma": [22, 50],
+        "p_wh_atma": [16, 32],
+        "h_esp_m": [2100, 2800],
+        "h_perf_minus_h_esp_m": [150, 300],
+        "d_tub_mm": [62, 73],
+        "d_cas_mm": [146, 178],
+        "p_res_atma": [220, 310],
+        "productivity_index": [0.50, 2.50],
+        "fw_perc": [75, 97],
+        "muob_cP": [1.0, 2.8],
+        "u_surf_v": [970, 1030]
+      },
+      "recommended_scenarios": [
+        "stable_normal",
+        "watercut_growth",
+        "wellhead_backpressure_growth",
+        "voltage_sag"
+      ]
+    },
+    {
+      "id": "A10",
+      "name": "medium_rate_low_margin_inflow",
+      "intent": "Medium-rate well with limited inflow reserve where drawdown-driven scenarios are most informative.",
+      "pump_selection_targets": {
+        "pump_nominal_rate_sm3day": [60, 120],
+        "pump_nominal_head_m": [1800, 2400],
+        "motor_nominal_power_kw": [45, 90]
+      },
+      "base_input_ranges": {
+        "q_liq_target_sm3day": [35, 80],
+        "p_int_atma": [20, 38],
+        "p_wh_atma": [14, 26],
+        "h_esp_m": [2200, 2850],
+        "h_perf_minus_h_esp_m": [180, 320],
+        "d_tub_mm": [60, 68],
+        "d_cas_mm": [146, 168],
+        "p_res_atma": [205, 275],
+        "productivity_index": [0.06, 0.30],
+        "fw_perc": [30, 80],
+        "muob_cP": [1.2, 3.5],
+        "u_surf_v": [970, 1030]
+      },
+      "recommended_scenarios": [
+        "stable_normal",
+        "inflow_deterioration",
+        "wellhead_backpressure_growth"
+      ]
+    }
+  ]
+}

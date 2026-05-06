@@ -144,3 +144,21 @@ def test_well_esp_system_tracks_target_wellhead_pressure_across_demo_window() ->
     assert df["well_solver_ok"].all()
     assert df["wellhead_target_error_atma"].max() < 0.05
     assert (df["p_buf_atma"] - df["p_wh_target_atma"]).abs().max() < 0.05
+
+
+def test_well_esp_system_applies_pvt_overrides_from_control_plan() -> None:
+    df = generate_dataframe(
+        _cfg(
+            output_name="well_esp_static",
+            n_points=9,
+            control_plan_path="examples/scenario_library/well_esp_watercut_growth_medium_2h.json",
+            productivity_index=0.55,
+        ),
+        run_id=0,
+        total_runs=1,
+    )
+
+    assert df["fw_fr"].iloc[0] < df["fw_fr"].iloc[-1]
+    assert df["fw_fr"].iloc[0] == 0.30
+    assert df["fw_fr"].iloc[-1] == 0.60
+    assert df["motor_p_electr_kw"].nunique() > 1

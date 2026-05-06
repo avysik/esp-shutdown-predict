@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Literal, Optional
 
 import pandas as pd
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class ControlOverride(BaseModel):
@@ -26,6 +26,17 @@ class ControlOverride(BaseModel):
     p_wh_atma: Optional[float] = Field(None, ge=0)
     p_cas_atma: Optional[float] = Field(None, ge=0)
     t_wf_C: Optional[float] = None
+    rp_m3m3: Optional[float] = Field(None, ge=0)
+    muob_cP: Optional[float] = Field(None, gt=0)
+    fw_fr: Optional[float] = Field(None, ge=0, le=1)
+    fw_perc: Optional[float] = Field(None, ge=0, le=100)
+    q_gas_free_sm3day: Optional[float] = Field(None, ge=0)
+
+    @model_validator(mode="after")
+    def _validate_fw_override(self) -> "ControlOverride":
+        if self.fw_fr is not None and self.fw_perc is not None:
+            raise ValueError("Specify only one of fw_fr or fw_perc in control overrides.")
+        return self
 
 
 class ControlSegment(ControlOverride):
@@ -100,6 +111,10 @@ class TimeStepControl:
     p_wh_atma: Optional[float] = None
     p_cas_atma: Optional[float] = None
     t_wf_C: Optional[float] = None
+    rp_m3m3: Optional[float] = None
+    muob_cP: Optional[float] = None
+    fw_fr: Optional[float] = None
+    q_gas_free_sm3day: Optional[float] = None
 
 
 @dataclass(frozen=True)
@@ -143,6 +158,13 @@ def _resolve_duration(expr: str) -> pd.Timedelta:
 
 
 def _apply_override(state: TimeStepControl, override: ControlOverride) -> TimeStepControl:
+    if override.fw_fr is not None:
+        fw_fr = float(override.fw_fr)
+    elif override.fw_perc is not None:
+        fw_fr = float(override.fw_perc) / 100.0
+    else:
+        fw_fr = state.fw_fr
+
     return TimeStepControl(
         q_liq_sm3day=state.q_liq_sm3day if override.q_liq_sm3day is None else float(override.q_liq_sm3day),
         p_int_atma=state.p_int_atma if override.p_int_atma is None else float(override.p_int_atma),
@@ -156,6 +178,10 @@ def _apply_override(state: TimeStepControl, override: ControlOverride) -> TimeSt
         p_wh_atma=state.p_wh_atma if override.p_wh_atma is None else float(override.p_wh_atma),
         p_cas_atma=state.p_cas_atma if override.p_cas_atma is None else float(override.p_cas_atma),
         t_wf_C=state.t_wf_C if override.t_wf_C is None else float(override.t_wf_C),
+        rp_m3m3=state.rp_m3m3 if override.rp_m3m3 is None else float(override.rp_m3m3),
+        muob_cP=state.muob_cP if override.muob_cP is None else float(override.muob_cP),
+        fw_fr=fw_fr,
+        q_gas_free_sm3day=state.q_gas_free_sm3day if override.q_gas_free_sm3day is None else float(override.q_gas_free_sm3day),
         is_running=state.is_running if override.running is None else bool(override.running),
         control_label=state.control_label if override.label is None else str(override.label),
         control_reason=state.control_reason if override.reason is None else str(override.reason),
@@ -205,6 +231,12 @@ def _build_rule_context(control: TimeStepControl, row: Optional[dict[str, Any]] 
         "p_wh_atma": control.p_wh_atma,
         "p_cas_atma": control.p_cas_atma,
         "t_wf_C": control.t_wf_C,
+        "rp_m3m3": control.rp_m3m3,
+        "muob_cP": control.muob_cP,
+        "muob_cp": control.muob_cP,
+        "fw_fr": control.fw_fr,
+        "fw_perc": None if control.fw_fr is None else control.fw_fr * 100.0,
+        "q_gas_free_sm3day": control.q_gas_free_sm3day,
         "is_running": control.is_running,
         "control_label": control.control_label,
         "control_reason": control.control_reason,
@@ -309,6 +341,10 @@ def build_time_controls(
     p_wh_atma: Optional[float] = None,
     p_cas_atma: Optional[float] = None,
     t_wf_C: Optional[float] = None,
+    rp_m3m3: Optional[float] = None,
+    muob_cP: Optional[float] = None,
+    fw_fr: Optional[float] = None,
+    q_gas_free_sm3day: Optional[float] = None,
     control_plan: Optional[ControlPlan] = None,
 ) -> list[TimeStepControl]:
     if not idx.empty:
@@ -331,6 +367,10 @@ def build_time_controls(
                 p_wh_atma=None if p_wh_atma is None else float(p_wh_atma),
                 p_cas_atma=None if p_cas_atma is None else float(p_cas_atma),
                 t_wf_C=None if t_wf_C is None else float(t_wf_C),
+                rp_m3m3=None if rp_m3m3 is None else float(rp_m3m3),
+                muob_cP=None if muob_cP is None else float(muob_cP),
+                fw_fr=None if fw_fr is None else float(fw_fr),
+                q_gas_free_sm3day=None if q_gas_free_sm3day is None else float(q_gas_free_sm3day),
                 is_running=True,
                 control_label="",
                 control_reason="",
@@ -352,6 +392,22 @@ def build_time_controls(
         p_wh_atma=(None if p_wh_atma is None and base.p_wh_atma is None else float(p_wh_atma if base.p_wh_atma is None else base.p_wh_atma)),
         p_cas_atma=(None if p_cas_atma is None and base.p_cas_atma is None else float(p_cas_atma if base.p_cas_atma is None else base.p_cas_atma)),
         t_wf_C=(None if t_wf_C is None and base.t_wf_C is None else float(t_wf_C if base.t_wf_C is None else base.t_wf_C)),
+        rp_m3m3=(None if rp_m3m3 is None and base.rp_m3m3 is None else float(rp_m3m3 if base.rp_m3m3 is None else base.rp_m3m3)),
+        muob_cP=(None if muob_cP is None and base.muob_cP is None else float(muob_cP if base.muob_cP is None else base.muob_cP)),
+        fw_fr=(
+            None
+            if fw_fr is None and base.fw_fr is None and base.fw_perc is None
+            else float(
+                fw_fr
+                if base.fw_fr is None and base.fw_perc is None
+                else (base.fw_fr if base.fw_fr is not None else base.fw_perc / 100.0)
+            )
+        ),
+        q_gas_free_sm3day=(
+            None
+            if q_gas_free_sm3day is None and base.q_gas_free_sm3day is None
+            else float(q_gas_free_sm3day if base.q_gas_free_sm3day is None else base.q_gas_free_sm3day)
+        ),
         is_running=True if base.running is None else bool(base.running),
         control_label="" if base.label is None else str(base.label),
         control_reason="" if base.reason is None else str(base.reason),

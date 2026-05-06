@@ -78,7 +78,7 @@ def _pump_q_range_from_db(pump) -> tuple[float, float]:
     raise ValueError("Cannot determine q range: DB has no usable rate_* fields for this pump.")
 
 
-def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataFrame:
+def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int, *, show_progress: bool = True) -> pd.DataFrame:
     idx = _make_time_index(cfg.time_axis.time_step, cfg.time_axis.n_points)
 
     repo = load_repository(cfg.esp_db_path)
@@ -117,6 +117,10 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
         p_wh_atma=None if cfg.well is None else cfg.well.p_wh_atma,
         p_cas_atma=None if cfg.well is None else cfg.well.p_cas_atma,
         t_wf_C=None if cfg.well is None else cfg.well.t_wf_C,
+        rp_m3m3=float(cfg.pvt.rp_m3m3),
+        muob_cP=float(cfg.pvt.muob_cP),
+        fw_fr=float(cfg.pvt.fw_fr),
+        q_gas_free_sm3day=float(cfg.pvt.q_gas_free_sm3day),
         control_plan=control_plan,
     )
     sample_step = idx[1] - idx[0] if len(idx) > 1 else pd.Timedelta(seconds=0)
@@ -126,7 +130,7 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
     cols = columns_for(cfg.scenario)
     data: dict[str, list[Any]] = {c: [] for c in cols}
 
-    for i, ts in enumerate(tqdm(idx, desc=f"run {run_id}", leave=False)):
+    for i, ts in enumerate(tqdm(idx, desc=f"run {run_id}", leave=False, disable=not show_progress)):
         planned_control = controls[i]
         control, active_rule_actions, rule_trigger_counts = apply_pre_rules(
             planned_control=planned_control,
@@ -138,6 +142,19 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
         )
         q_liq = float(control.q_liq_sm3day)
         is_running = bool(control.is_running and control.pump_freq_hz > 0.0)
+        pvt_cfg = type(cfg.pvt).model_validate(
+            {
+                **cfg.pvt.model_dump(),
+                "rp_m3m3": cfg.pvt.rp_m3m3 if control.rp_m3m3 is None else float(control.rp_m3m3),
+                "muob_cP": cfg.pvt.muob_cP if control.muob_cP is None else float(control.muob_cP),
+                "fw_fr": cfg.pvt.fw_fr if control.fw_fr is None else float(control.fw_fr),
+                "q_gas_free_sm3day": (
+                    cfg.pvt.q_gas_free_sm3day
+                    if control.q_gas_free_sm3day is None
+                    else float(control.q_gas_free_sm3day)
+                ),
+            }
+        )
 
         if cfg.scenario == ScenarioName.WELL_ESP_SYSTEM:
             assert cfg.inflow is not None
@@ -162,7 +179,7 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
                 }
             )
 
-            well = build_well_esp(repo, cfg.pump, cfg.pvt, inflow_cfg, well_cfg)
+            well = build_well_esp(repo, cfg.pump, pvt_cfg, inflow_cfg, well_cfg)
             solve_result = solve_well_from_pwh(
                 well,
                 p_wh_atma=well_cfg.p_wh_atma,
@@ -262,17 +279,17 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
                 "h_esp_m": float(well_cfg.h_esp_m),
                 "d_tub_mm": float(well_cfg.d_tub_mm),
                 "d_cas_mm": float(well_cfg.d_cas_mm),
-                "gamma_g": float(cfg.pvt.gamma_g),
-                "gamma_o": float(cfg.pvt.gamma_o),
-                "gamma_w": float(cfg.pvt.gamma_w),
-                "rsb_m3m3": float(cfg.pvt.rsb_m3m3),
-                "rp_m3m3": float(cfg.pvt.rp_m3m3),
-                "pb_atma": float(cfg.pvt.pb_atma),
-                "t_res_c": float(cfg.pvt.t_res_C),
-                "bob_m3m3": float(cfg.pvt.bob_m3m3),
-                "muob_cp": float(cfg.pvt.muob_cP),
-                "fw_fr": float(cfg.pvt.fw_fr),
-                "q_gas_free_sm3day": float(cfg.pvt.q_gas_free_sm3day),
+                "gamma_g": float(pvt_cfg.gamma_g),
+                "gamma_o": float(pvt_cfg.gamma_o),
+                "gamma_w": float(pvt_cfg.gamma_w),
+                "rsb_m3m3": float(pvt_cfg.rsb_m3m3),
+                "rp_m3m3": float(pvt_cfg.rp_m3m3),
+                "pb_atma": float(pvt_cfg.pb_atma),
+                "t_res_c": float(pvt_cfg.t_res_C),
+                "bob_m3m3": float(pvt_cfg.bob_m3m3),
+                "muob_cp": float(pvt_cfg.muob_cP),
+                "fw_fr": float(pvt_cfg.fw_fr),
+                "q_gas_free_sm3day": float(pvt_cfg.q_gas_free_sm3day),
                 "q_liq_sm3day": q_liq,
                 "mu_mix_cst": mu_mix_cst,
                 "gas_fraction_d": gas_frac,
@@ -319,7 +336,7 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
             sys = None  # type: ignore[assignment]
         pump.freq_hz = float(control.pump_freq_hz)
 
-        pvt = build_pvt(cfg.pvt, q_liq_sm3day=q_liq)
+        pvt = build_pvt(pvt_cfg, q_liq_sm3day=q_liq)
         # Compute intake PVT state (used by pump.calc_ESP internally; also recorded as honest intermediate outputs)
         pvt.calc_pvt(control.p_int_atma, control.t_int_C)
 
@@ -339,17 +356,17 @@ def generate_dataframe(cfg: AppConfig, run_id: int, total_runs: int) -> pd.DataF
             "pump_freq_hz": float(control.pump_freq_hz),
             "p_int_atma": float(control.p_int_atma),
             "t_int_c": float(control.t_int_C),
-            "gamma_g": float(cfg.pvt.gamma_g),
-            "gamma_o": float(cfg.pvt.gamma_o),
-            "gamma_w": float(cfg.pvt.gamma_w),
-            "rsb_m3m3": float(cfg.pvt.rsb_m3m3),
-            "rp_m3m3": float(cfg.pvt.rp_m3m3),
-            "pb_atma": float(cfg.pvt.pb_atma),
-            "t_res_c": float(cfg.pvt.t_res_C),
-            "bob_m3m3": float(cfg.pvt.bob_m3m3),
-            "muob_cp": float(cfg.pvt.muob_cP),
-            "fw_fr": float(cfg.pvt.fw_fr),
-            "q_gas_free_sm3day": float(cfg.pvt.q_gas_free_sm3day),
+            "gamma_g": float(pvt_cfg.gamma_g),
+            "gamma_o": float(pvt_cfg.gamma_o),
+            "gamma_w": float(pvt_cfg.gamma_w),
+            "rsb_m3m3": float(pvt_cfg.rsb_m3m3),
+            "rp_m3m3": float(pvt_cfg.rp_m3m3),
+            "pb_atma": float(pvt_cfg.pb_atma),
+            "t_res_c": float(pvt_cfg.t_res_C),
+            "bob_m3m3": float(pvt_cfg.bob_m3m3),
+            "muob_cp": float(pvt_cfg.muob_cP),
+            "fw_fr": float(pvt_cfg.fw_fr),
+            "q_gas_free_sm3day": float(pvt_cfg.q_gas_free_sm3day),
             "q_liq_sm3day": q_liq,
             "mu_mix_cst": mu_mix_cst,
             "gas_fraction_d": gas_frac,

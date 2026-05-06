@@ -1,0 +1,29 @@
+{
+  "base": {
+    "label": "well_window_0000_viscosity_growth_mild",
+    "reason": "mild_effective_oil_viscosity_growth_without_operator_response",
+    "p_res_atma": 250.0,
+    "productivity_index": 0.55,
+    "p_test_atma": 200.0,
+    "p_wh_atma": 20.0,
+    "p_cas_atma": 10.0,
+    "t_wf_C": 80.0,
+    "pump_freq_hz": 50.0,
+    "u_surf_v": 1000.0,
+    "rp_m3m3": 100.0,
+    "muob_cP": 1.5,
+    "fw_perc": 30.0,
+    "q_gas_free_sm3day": 0.0
+  },
+  "segments": [
+    { "start": "0min", "end": "15min", "label": "well_window_0000_viscosity_growth_mild", "reason": "baseline_stable_regime", "muob_cP": 1.5 },
+    { "start": "15min", "end": "30min", "label": "well_window_0000_viscosity_growth_mild", "reason": "baseline_stable_regime", "muob_cP": 1.5 },
+    { "start": "30min", "end": "45min", "label": "well_window_0000_viscosity_growth_mild", "reason": "initial_viscosity_growth", "muob_cP": 1.8 },
+    { "start": "45min", "end": "60min", "label": "well_window_0000_viscosity_growth_mild", "reason": "initial_viscosity_growth", "muob_cP": 2.1 },
+    { "start": "60min", "end": "75min", "label": "well_window_0000_viscosity_growth_mild", "reason": "continued_viscosity_growth", "muob_cP": 2.4 },
+    { "start": "75min", "end": "90min", "label": "well_window_0000_viscosity_growth_mild", "reason": "continued_viscosity_growth", "muob_cP": 2.7 },
+    { "start": "90min", "end": "105min", "label": "well_window_0000_viscosity_growth_mild", "reason": "new_higher_viscosity_plateau", "muob_cP": 3.0 },
+    { "start": "105min", "end": "120min", "label": "well_window_0000_viscosity_growth_mild", "reason": "new_higher_viscosity_plateau", "muob_cP": 3.2 },
+    { "start": "120min", "end": "135min", "label": "well_window_0000_viscosity_growth_mild", "reason": "new_higher_viscosity_plateau", "muob_cP": 3.5 }
+  ]
+}
