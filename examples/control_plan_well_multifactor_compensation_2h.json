@@ -1,0 +1,97 @@
+{
+  "base": {
+    "label": "well_window_0000_multifactor_compensation",
+    "reason": "productivity_decline_with_wellhead_growth_and_frequency_response",
+    "p_res_atma": 250.0,
+    "productivity_index": 0.55,
+    "p_test_atma": 200.0,
+    "p_wh_atma": 20.0,
+    "p_cas_atma": 10.0,
+    "t_wf_C": 80.0,
+    "pump_freq_hz": 50.0,
+    "u_surf_v": 1000.0
+  },
+  "segments": [
+    {
+      "start": "0min",
+      "end": "15min",
+      "label": "well_window_0000_multifactor_compensation",
+      "reason": "baseline_stable_regime",
+      "productivity_index": 0.55,
+      "p_wh_atma": 20.0,
+      "pump_freq_hz": 50.0
+    },
+    {
+      "start": "15min",
+      "end": "30min",
+      "label": "well_window_0000_multifactor_compensation",
+      "reason": "baseline_stable_regime",
+      "productivity_index": 0.548,
+      "p_wh_atma": 20.2,
+      "pump_freq_hz": 50.0
+    },
+    {
+      "start": "30min",
+      "end": "45min",
+      "label": "well_window_0000_multifactor_compensation",
+      "reason": "productivity_starts_to_decline",
+      "productivity_index": 0.533,
+      "p_wh_atma": 20.9,
+      "pump_freq_hz": 50.0
+    },
+    {
+      "start": "45min",
+      "end": "60min",
+      "label": "well_window_0000_multifactor_compensation",
+      "reason": "decline_accelerates_and_backpressure_grows",
+      "productivity_index": 0.509,
+      "p_wh_atma": 22.1,
+      "pump_freq_hz": 50.0
+    },
+    {
+      "start": "60min",
+      "end": "75min",
+      "label": "well_window_0000_multifactor_compensation",
+      "reason": "operator_starts_frequency_compensation",
+      "productivity_index": 0.486,
+      "p_wh_atma": 23.5,
+      "pump_freq_hz": 50.5
+    },
+    {
+      "start": "75min",
+      "end": "90min",
+      "label": "well_window_0000_multifactor_compensation",
+      "reason": "frequency_ramp_partial_compensation",
+      "productivity_index": 0.463,
+      "p_wh_atma": 24.7,
+      "pump_freq_hz": 51.0
+    },
+    {
+      "start": "90min",
+      "end": "105min",
+      "label": "well_window_0000_multifactor_compensation",
+      "reason": "frequency_ramp_partial_compensation",
+      "productivity_index": 0.446,
+      "p_wh_atma": 25.8,
+      "pump_freq_hz": 51.5
+    },
+    {
+      "start": "105min",
+      "end": "120min",
+      "label": "well_window_0000_multifactor_compensation",
+      "reason": "new_operator_setpoint_52hz",
+      "productivity_index": 0.434,
+      "p_wh_atma": 26.6,
+      "pump_freq_hz": 52.0
+    },
+    {
+      "start": "120min",
+      "end": "135min",
+      "label": "well_window_0000_multifactor_compensation",
+      "reason": "new_operator_setpoint_52hz",
+      "productivity_index": 0.428,
+      "p_wh_atma": 27.1,
+      "pump_freq_hz": 52.0
+    }
+  ]
+}

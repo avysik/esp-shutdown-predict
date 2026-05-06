@@ -76,10 +76,10 @@ def test_telemetry_dataframe_maps_expected_columns() -> None:
     assert telemetry[TELEMETRY_ACTIVE_POWER].iloc[0] == df["motor_p_electr_kw"].iloc[0]
     assert telemetry[TELEMETRY_VOLTAGE_IMBALANCE].isna().all()
     assert telemetry[TELEMETRY_CURRENT_IMBALANCE].isna().all()
-    assert telemetry[TELEMETRY_LOAD].iloc[0] == df["motor_load_d"].iloc[0]
+    assert telemetry[TELEMETRY_LOAD].iloc[0] == df["motor_load_d"].iloc[0] * 100.0
     assert telemetry[TELEMETRY_POWER_FACTOR].iloc[0] == df["motor_cosphi"].iloc[0]
-    assert telemetry[TELEMETRY_VOLTAGE].iloc[0] == df["motor_u_lin_v"].iloc[0]
-    assert telemetry[TELEMETRY_INTAKE_PRESSURE].iloc[0] == df["p_int_atma"].iloc[0]
+    assert telemetry[TELEMETRY_VOLTAGE].iloc[0] == df["u_surf_v"].iloc[0] * 400.0 / df["motor_u_nom_lin_v"].iloc[0]
+    assert telemetry[TELEMETRY_INTAKE_PRESSURE].iloc[0] == df["p_int_atma"].iloc[0] * 0.101325
     assert telemetry[TELEMETRY_INSULATION_RESISTANCE].isna().all()
     assert telemetry[TELEMETRY_MOTOR_TEMPERATURE].isna().all()
     assert telemetry[TELEMETRY_CURRENT].iloc[0] == df["motor_i_lin_a"].iloc[0]

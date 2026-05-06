@@ -1,0 +1,29 @@
+{
+  "base": {
+    "label": "well_window_0000_voltage_sag_mild",
+    "reason": "mild_surface_voltage_sag_with_fixed_frequency",
+    "p_res_atma": 250.0,
+    "productivity_index": 0.55,
+    "p_test_atma": 200.0,
+    "p_wh_atma": 20.0,
+    "p_cas_atma": 10.0,
+    "t_wf_C": 80.0,
+    "pump_freq_hz": 50.0,
+    "u_surf_v": 1000.0,
+    "rp_m3m3": 100.0,
+    "muob_cP": 1.5,
+    "fw_perc": 30.0,
+    "q_gas_free_sm3day": 0.0
+  },
+  "segments": [
+    { "start": "0min", "end": "15min", "label": "well_window_0000_voltage_sag_mild", "reason": "baseline_stable_regime", "u_surf_v": 1000.0 },
+    { "start": "15min", "end": "30min", "label": "well_window_0000_voltage_sag_mild", "reason": "baseline_stable_regime", "u_surf_v": 1000.0 },
+    { "start": "30min", "end": "45min", "label": "well_window_0000_voltage_sag_mild", "reason": "initial_voltage_sag", "u_surf_v": 995.0 },
+    { "start": "45min", "end": "60min", "label": "well_window_0000_voltage_sag_mild", "reason": "initial_voltage_sag", "u_surf_v": 990.0 },
+    { "start": "60min", "end": "75min", "label": "well_window_0000_voltage_sag_mild", "reason": "continued_voltage_sag", "u_surf_v": 985.0 },
+    { "start": "75min", "end": "90min", "label": "well_window_0000_voltage_sag_mild", "reason": "continued_voltage_sag", "u_surf_v": 980.0 },
+    { "start": "90min", "end": "105min", "label": "well_window_0000_voltage_sag_mild", "reason": "new_lower_voltage_plateau", "u_surf_v": 975.0 },
+    { "start": "105min", "end": "120min", "label": "well_window_0000_voltage_sag_mild", "reason": "new_lower_voltage_plateau", "u_surf_v": 970.0 },
+    { "start": "120min", "end": "135min", "label": "well_window_0000_voltage_sag_mild", "reason": "new_lower_voltage_plateau", "u_surf_v": 970.0 }
+  ]
+}

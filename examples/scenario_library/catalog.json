@@ -1,0 +1,72 @@
+{
+  "library_name": "well_esp_ml_v1",
+  "window": {
+    "duration": "2h",
+    "points": 9,
+    "time_step": "15min"
+  },
+  "families": [
+    {
+      "family": "stable_normal",
+      "varied_parameters": [],
+      "files": [
+        "well_esp_stable_normal_2h.json"
+      ]
+    },
+    {
+      "family": "inflow_deterioration",
+      "varied_parameters": [
+        "productivity_index"
+      ],
+      "files": [
+        "well_esp_inflow_deterioration_mild_2h.json",
+        "well_esp_inflow_deterioration_medium_2h.json",
+        "well_esp_inflow_deterioration_severe_2h.json"
+      ]
+    },
+    {
+      "family": "wellhead_backpressure_growth",
+      "varied_parameters": [
+        "p_wh_atma"
+      ],
+      "files": [
+        "well_esp_wellhead_backpressure_mild_2h.json",
+        "well_esp_wellhead_backpressure_medium_2h.json",
+        "well_esp_wellhead_backpressure_severe_2h.json"
+      ]
+    },
+    {
+      "family": "watercut_growth",
+      "varied_parameters": [
+        "fw_perc"
+      ],
+      "files": [
+        "well_esp_watercut_growth_mild_2h.json",
+        "well_esp_watercut_growth_medium_2h.json",
+        "well_esp_watercut_growth_severe_2h.json"
+      ]
+    },
+    {
+      "family": "viscosity_growth",
+      "varied_parameters": [
+        "muob_cP"
+      ],
+      "files": [
+        "well_esp_viscosity_growth_mild_2h.json",
+        "well_esp_viscosity_growth_medium_2h.json",
+        "well_esp_viscosity_growth_severe_2h.json"
+      ]
+    },
+    {
+      "family": "voltage_sag",
+      "varied_parameters": [
+        "u_surf_v"
+      ],
+      "files": [
+        "well_esp_voltage_sag_mild_2h.json",
+        "well_esp_voltage_sag_medium_2h.json",
+        "well_esp_voltage_sag_severe_2h.json"
+      ]
+    }
+  ]
+}

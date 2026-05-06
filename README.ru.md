@@ -278,6 +278,106 @@ ValueDate
 .\.venv\Scripts\python.exe -m ufpy_esp_synth.plot_windows --input-parquet .\out_demo_2h\esp-system__esp_1006__run_00000.parquet --output-png .\out_demo_2h\window_analysis.png --points-per-window 9
 ```
 
+## Генератор Фонда
+
+Для массовой генерации датасета по фонду используйте `src/wrapper.py` в режиме `fleet`.
+
+Генератор фонда:
+- загружает архетипы из `examples/fleet_archetypes/well_esp_archetypes_v1.json`
+- строит детерминированные базовые состояния внутри каждого архетипа через Latin hypercube sampling
+- подбирает совместимые `esp_id` и `stage_num`
+- калибрует устойчивую базовую рабочую точку
+- накладывает поверх неё рекомендованные семейства сценариев
+- пишет по одному основному parquet, одному telemetry parquet и одному `control_plan.json` на каждое окно
+
+### Пилотный Запуск
+
+Сначала используйте этот запуск, чтобы убедиться, что end-to-end генерация работает на вашем компьютере:
+
+```powershell
+.\.venv\Scripts\python.exe .\src\wrapper.py --mode fleet --archetype-filter A03 --samples-per-archetype 1 --candidate-multiplier 12 --workers 1 --limit 4 --output-base-dir .\out_fleet_pilot_v1
+```
+
+Эта команда создаёт маленький реальный batch:
+- один архетип: `A03`
+- один принятый базовый sample
+- до четырёх scenario windows
+- полный вывод parquet и telemetry
+
+### Большой Batch-Запуск
+
+После успешного пилота используйте на более мощной машине:
+
+```powershell
+.\.venv\Scripts\python.exe .\src\wrapper.py --mode fleet --samples-per-archetype 100 --candidate-multiplier 12 --workers 16 --output-base-dir .\out_fleet_batch_v1
+```
+
+### Опциональный Dry Run
+
+Если хотите сначала оценить покрытие без полного вычислительного прогона, используйте:
+
+```powershell
+.\.venv\Scripts\python.exe .\src\wrapper.py --mode fleet --samples-per-archetype 100 --candidate-multiplier 12 --workers 1 --dry-run --output-base-dir .\out_fleet_batch_v1_dry
+```
+
+Dry run строит fleet-план, калибрует candidate base states, подбирает насосы и пишет `fleet_manifest.parquet` и `fleet_summary.json`, но не выполняет полную генерацию parquet-окон для каждого сценария.
+
+### Что Получится После Big Batch
+
+Для текущей библиотеки архетипов `v1`, при `recommended_only=true`, включённых трёх уровнях тяжести и предположении, что все `10` архетипов примут по `100` базовых sample, объём будет таким:
+
+- принятые базовые состояния: до `1000`
+- семейства сценариев:
+  - `stable_normal`
+  - `inflow_deterioration`
+  - `wellhead_backpressure_growth`
+  - `watercut_growth`
+  - `viscosity_growth`
+  - `voltage_sag`
+- быстрые окна:
+  - `stable_normal`
+  - `inflow_deterioration`
+  - `wellhead_backpressure_growth`
+  - `voltage_sag`
+  - спецификация: `2h`, `9` точек, `15min`
+- медленные окна:
+  - `watercut_growth`
+  - `viscosity_growth`
+  - спецификация: `4h`, `9` точек, `30min`
+
+В текущей матрице рекомендаций это даёт `85` окон на один полный проход по архетипам, поэтому для batch с `100` sample на архетип целевой объём такой:
+
+- всего окон: до `8500`
+- всего строк в основных parquet: `76 500`
+- всего строк в telemetry parquet: `76 500`
+
+Ожидаемое распределение окон по семействам:
+
+- `stable_normal`: `1000`
+- `inflow_deterioration`: `600`
+- `wellhead_backpressure_growth`: `2400`
+- `watercut_growth`: `1200`
+- `viscosity_growth`: `900`
+- `voltage_sag`: `2400`
+
+В каталоге каждого окна будут:
+- `control_plan.json`
+- один основной parquet
+- один telemetry parquet
+
+В корне датасета дополнительно будут:
+- `fleet_manifest.parquet`
+- `fleet_summary.json`
+
+Важно:
+- фактический объём может быть меньше, если часть candidate base states не пройдёт калибровку
+- сначала прогоняйте pilot
+- перед многосуточным production batch лучше делать `dry-run`
+- текущая telemetry-семантика уже выровнена ближе к полевым данным:
+  - `Напряжение` экспортируется как линейное напряжение в эквиваленте `400 V`
+  - `Р на приеме насоса` экспортируется в `MPa`
+  - `Загрузка` экспортируется в `%`
+
 ## Важные Поля Основного Parquet Для `well-esp-system`
 
 Полезные инженерные колонки:
